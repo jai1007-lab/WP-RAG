@@ -4,6 +4,7 @@ import psycopg2
 from langchain_community.vectorstores.pgvector import PGVector
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.schema import Document
+from config import Config
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -11,24 +12,26 @@ warnings.filterwarnings("ignore")
 class VectorSearch:
     def __init__(
         self, 
-        connection_string: str = "postgresql+psycopg2://langchain:langchain@localhost:6024/langchain",
-        collection_name: str = "document_store"
+        connection_string: str = None,
+        collection_name: str = None
     ):
         """
-        Initialize VectorSearch with connection settings and verify database.
+        Initialize VectorSearch with connection settings.
         
         Args:
-            connection_string: PostgreSQL connection string
-            collection_name: Name for the vector collection
+            connection_string: Optional PostgreSQL connection string
+            collection_name: Optional collection name
         """
-        self.connection_string = connection_string
-        self.collection_name = collection_name
+        # Validate configuration
+        Config.validate_connections()
         
-        # Verify database connection
+        # Use provided values or defaults from Config
+        self.connection_string = connection_string or Config.get_postgres_connection()
+        self.collection_name = collection_name or Config.VECTOR_COLLECTION_NAME
+        
         if not self._verify_database():
             raise Exception("Database verification failed")
             
-        # Initialize vector store
         self.vector_store = self._initialize_store()
 
     def _verify_database(self) -> bool:
@@ -172,8 +175,8 @@ def main():
     try:
         # Initialize vector search
         vector_search = VectorSearch(
-            connection_string="postgresql+psycopg2://langchain:langchain@localhost:6024/langchain",
-            collection_name="document_store"
+            connection_string=Config.POSTGRES_CONNECTION_STRING,
+            collection_name=Config.VECTOR_COLLECTION_NAME
         )
         
         # # Add a document

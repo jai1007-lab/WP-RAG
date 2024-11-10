@@ -1,6 +1,7 @@
 from pymongo import MongoClient
 import json
 from typing import Dict, List
+from config import Config
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -11,22 +12,30 @@ from vector_search import VectorSearch
 class IndexDB:
     def __init__(
         self,
-        mongo_uri: str = "mongodb://localhost:27017/",
-        database_name: str = "retriever",
-        collection_name: str = "wp_forms"
+        mongo_uri: str = None,
+        database_name: str = None,
+        collection_name: str = None
     ):
         """
-        Initialize MongoDB connection for document storage and retrieval.
+        Initialize MongoDB connection.
         
         Args:
-            mongo_uri: MongoDB connection URI
-            database_name: Name of the database
-            collection_name: Name of the collection
+            mongo_uri: Optional MongoDB URI
+            database_name: Optional database name
+            collection_name: Optional collection name
         """
+        # Validate configuration
+        Config.validate_connections()
+        
+        # Use provided values or defaults from Config
+        self.mongo_uri = mongo_uri or Config.get_mongo_uri()
+        self.database_name = database_name or Config.MONGO_DB
+        self.collection_name = collection_name or Config.MONGO_COLLECTION_NAME
+        
         try:
-            self.client = MongoClient(mongo_uri)
-            self.db = self.client[database_name]
-            self.collection = self.db[collection_name]
+            self.client = MongoClient(self.mongo_uri)
+            self.db = self.client[self.database_name]
+            self.collection = self.db[self.collection_name]
             
             # Create index on document_id
             self.collection.create_index("document_id")
